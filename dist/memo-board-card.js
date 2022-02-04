@@ -2614,7 +2614,6 @@ class MemoBoardCard extends LitElement {
     firstUpdated() {
         console.log('firstUpdated');
         this.canvas = this.shadowRoot.getElementById("memo-board");
-        console.log(this.canvas);
         if (this.canvas) {
             console.log('CANVAS FOUND!!');
             this.ctx = this.canvas.getContext("2d");
@@ -2628,6 +2627,7 @@ class MemoBoardCard extends LitElement {
                 undo: this.shadowRoot.getElementById("undo"),
                 save: this.shadowRoot.getElementById("save")
             };
+            this.setCanvasBg('white');
             const self = this;
             if (document.body.ontouchstart !== undefined) {
                 console.log("TOUCH");
@@ -2666,7 +2666,6 @@ class MemoBoardCard extends LitElement {
         }
     }
     canvasSetSize() {
-        console.log("canvasSetSize");
         let container = this.shadowRoot.getElementById("memo-container");
         this.canvas.width = container.offsetWidth - 40;
         this.canvas.height = container.offsetHeight - 40;
@@ -2682,7 +2681,6 @@ class MemoBoardCard extends LitElement {
         return { "x": x, "y": y };
     }
     mouseDown(e) {
-        console.log('mouseDown');
         this.firstDot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
         this.saveData(this.firstDot);
         this.painting = true;
@@ -2692,8 +2690,6 @@ class MemoBoardCard extends LitElement {
         this.drawCircle(this.lastPoint.x, this.lastPoint.y, 0);
     }
     mouseMove(e) {
-        console.log('mouseMove');
-        console.log(this.lastPoint);
         if (this.painting) {
             let position = this.getMousePosition(e);
             let newPoint = position;
@@ -2702,11 +2698,9 @@ class MemoBoardCard extends LitElement {
         }
     }
     mouseUp() {
-        console.log('mouseUp');
         this.painting = false;
     }
     mouseLeave() {
-        console.log('mouseLeave');
         this.painting = false;
     }
     //Draw point function
@@ -2728,7 +2722,6 @@ class MemoBoardCard extends LitElement {
         this.ctx.lineWidth = this.lWidth;
         this.ctx.lineCap = "round";
         this.ctx.lineJoin = "round";
-        console.log(this.lWidth);
         if (this.clear) {
             this.ctx.save();
             this.ctx.globalCompositeOperation = "destination-out";
@@ -2741,10 +2734,6 @@ class MemoBoardCard extends LitElement {
             this.ctx.restore();
         }
         else {
-            console.log('x1', x1);
-            console.log('y1', y1);
-            console.log('x2', x2);
-            console.log('y2', y2);
             this.ctx.moveTo(x1, y1);
             this.ctx.lineTo(x2, y2);
             this.ctx.stroke();
@@ -2781,7 +2770,7 @@ class MemoBoardCard extends LitElement {
         this.ctx.strokeStyle = this.activeColor;
     }
     setLineWidth(width) {
-        console.log(width);
+        console.log('setLineWidth');
         this.lWidth = width;
     }
     resetCanvas() {
@@ -2792,17 +2781,19 @@ class MemoBoardCard extends LitElement {
     ;
     save() {
         console.log('Save');
-        let imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        console.log('imgData', imgData);
-        console.log('imgData.data', imgData.data);
         let imgUrl = this.canvas.toDataURL("image/png");
-        console.log(imgUrl);
-        let saveA = document.createElement("a");
-        document.body.appendChild(saveA);
-        saveA.href = imgUrl;
-        saveA.download = "zspic" + (new Date).getTime();
-        saveA.target = "_blank";
-        saveA.click();
+        // this.hass.callService("mqtt", "publish", {
+        //   topic: "/memo",
+        //   payload: imgUrl
+        // });
+        this.hass.callService("shell_command", "save_memo", {
+            uri: imgUrl
+        });
+    }
+    setCanvasBg(color) {
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "black";
     }
     saveData(data) {
         (this.historyData.length === 10) && (this.historyData.shift());
